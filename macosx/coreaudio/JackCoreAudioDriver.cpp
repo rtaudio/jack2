@@ -196,7 +196,6 @@ static bool CheckAvailableDevice(AudioDeviceID device_id)
     return false;
 }
 
-
 static OSStatus DisplayDeviceNames()
 {
     UInt32 size;
@@ -1150,7 +1149,7 @@ OSStatus JackCoreAudioDriver::CreateAggregateDeviceAux(vector<AudioDeviceID> cap
     pluginAOPA.mScope = kAudioObjectPropertyScopeGlobal;
     pluginAOPA.mElement = kAudioObjectPropertyElementMaster;
     outDataSize = sizeof(CFStringRef);
-    osErr = AudioObjectSetPropertyData(*outAggregateDevice, &pluginAOPA, 0, NULL, outDataSize, &captureDeviceUID[0]);  // First capture is master...
+    osErr = AudioObjectSetPropertyData(*outAggregateDevice, &pluginAOPA, 0, NULL, outDataSize, &playbackDeviceUID[0]);  // First playback is master...
     if (osErr != noErr) {
         jack_error("CreateAggregateDeviceAux : AudioObjectSetPropertyData for master device error");
         printError(osErr);
