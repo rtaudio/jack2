@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include <stdlib.h>
 #include <inttypes.h>
 
+static jack_time_t __jack_cpu_mhz = 0;
 jack_time_t (*_jack_get_microseconds)(void) = 0;
 
 #if defined(__gnu_linux__) && (defined(__i386__) || defined(__x86_64__))
@@ -123,6 +124,135 @@ static jack_time_t jack_get_microseconds_from_hpet (void)
 
 #endif /* HPET_SUPPORT */
 
+static jack_time_t jack_get_microseconds_from_cycles (void) {
+	return get_cycles() / __jack_cpu_mhz;
+}
+
+/*
+ * This is another kludge.  It looks CPU-dependent, but actually it
+ * reflects the lack of standards for the Linux kernel formatting of
+ * /proc/cpuinfo.
+ */
+ 
+static jack_time_t jack_read_file_u64(const char *filename)
+{
+	jack_time_t mhz;
+	
+	char buf[60];
+	int ret;
+	
+	FILE *f = fopen(filename, "r");
+	
+	if(!f)
+		return 0;	
+	
+	ret = fgets(buf, sizeof(buf), f);
+	fclose(f);
+	
+	if(!ret)
+		return 0;
+		
+	if(sscanf(buf, "%" SCNu64, &mhz) == 1)
+		return mhz;
+		
+	return 0;
+}
+
+static jack_time_t jack_get_mhz (void)
+{
+/*
+	int ret = 0;
+	FILE *f = fopen("/proc/cpuinfo", "r");
+	if (f)
+	{
+		if(fgets(buf, sizeof(buf), f))
+		{
+#if defined(__powerpc__)
+		ret = sscanf(buf, "clock\t: %" SCNu64 "MHz", &mhz);
+#elif defined( __i386__ ) || defined (__hppa__)  || defined (__ia64__) || \
+      defined(__x86_64__)
+		ret = sscanf(buf, "cpu MHz         : %" SCNu64, &mhz);
+#elif defined( __sparc__ )
+		ret = sscanf(buf, "Cpu0Bogo        : %" SCNu64, &mhz);
+#elif defined( __mc68000__ )
+		ret = sscanf(buf, "Clocking:       %" SCNu64, &mhz);
+#elif defined( __s390__  )
+		ret = sscanf(buf, "bogomips per cpu: %" SCNu64, &mhz);
+#elif defined( __sh__  )
+		ret = sscanf(buf, "bogomips        : %" SCNu64, &mhz);
+#else // MIPS, ARM, alpha
+		ret = 0;
+#endif			
+		}
+		fclose(f);
+	}
+	
+	if (ret == 1)
+		return (jack_time_t)mhz;
+	*/
+
+		
+	jack_time_t  khz_max = jack_read_file_u64("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+	jack_time_t  khz_min = jack_read_file_u64("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+	
+	if(khz_max == 0) {
+		jack_error("FATAL: Cant't read /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq!\n");
+		exit(1);		
+	}
+	
+	if(khz_max != khz_min)
+	{
+		jack_error("FATAL: Cant't use cycle counter, cpu frequencies can vary!\n");
+		exit(1);	
+	}
+	
+	jack_time_t mhz = khz_max / 1000;
+	
+	jack_log("CPU MHz : %d", (int)mhz);
+	return (jack_time_t)mhz;
+}
+
+
+#ifdef ARM_HPET
+
+// ARM HPET from http://mindplusplus.wordpress.com/2013/05/21/accessing-the-raspberry-pis-1mhz-timer/
+
+#define ST_BASE (0x20003000)
+#define TIMER_OFFSET (4)
+#define TIMER_RATE 1000000
+
+static long long int *arm_hpet_ptr;
+
+static int jack_arm_hpet_init ()
+{
+	int fd;
+	void *st_base;
+	
+    // get access to system core memory
+    if (-1 == (fd = open("/dev/mem", O_RDONLY))) {
+        jack_error ("Cannot access /dev/mem (%s)", strerror (errno));
+        return -1;
+    }
+	
+    // map a specific page into process's address space
+    if (MAP_FAILED == (st_base = mmap(NULL, 4096,
+                        PROT_READ, MAP_SHARED, fd, ST_BASE))) {
+        jack_error ("mmap() failed.\n");
+        return -1;
+    }
+	
+	arm_hpet_ptr = (long long int *)((char *)st_base + TIMER_OFFSET);
+	
+
+	return 0;
+}
+
+static jack_time_t jack_get_microseconds_from_arm_hpet (void)
+{
+	return *arm_hpet_ptr; // 1mhz counter => 1µs cycle
+}
+#endif
+
 #define HAVE_CLOCK_GETTIME 1
 
 #ifndef HAVE_CLOCK_GETTIME
@@ -160,7 +290,7 @@ SERVER_EXPORT void JackSleep(long usec)
 
 SERVER_EXPORT void InitTime()
 {
-	/* nothing to do on a generic system - we use the system clock */
+	__jack_cpu_mhz = jack_get_mhz ();
 }
 
 SERVER_EXPORT void EndTime()
@@ -172,12 +302,27 @@ void SetClockSource(jack_timer_type_t source)
 
 	switch (source)
 	{
+        case JACK_TIMER_CYCLE_COUNTER:
+            _jack_get_microseconds = jack_get_microseconds_from_cycles;
+            break;
+
         case JACK_TIMER_HPET:
+#ifdef ARM_HPET 
+			jack_log("Clock source : %s", "arm hpet");
+	
+			if(jack_arm_hpet_init() == 0) {
+				_jack_get_microseconds = jack_get_microseconds_from_arm_hpet;
+			} else {
+				jack_log("Failed not init arm hpet, falling back to system clock.");
+				_jack_get_microseconds = jack_get_microseconds_from_system;
+			}
+#else
             if (jack_hpet_init () == 0) {
                 _jack_get_microseconds = jack_get_microseconds_from_hpet;
             } else {
                 _jack_get_microseconds = jack_get_microseconds_from_system;
             }
+#endif
             break;
 
         case JACK_TIMER_SYSTEM_CLOCK:
@@ -190,6 +335,8 @@ void SetClockSource(jack_timer_type_t source)
 const char* ClockSourceName(jack_timer_type_t source)
 {
 	switch (source) {
+        case JACK_TIMER_CYCLE_COUNTER:
+            return "cycle counter";
         case JACK_TIMER_HPET:
             return "hpet";
         case JACK_TIMER_SYSTEM_CLOCK:

@@ -111,10 +111,39 @@ static inline cycles_t get_cycles (void)
 
 #endif /* __i386__ */
 
-/* everything else but x86, amd64, sparcv9 or ppc */
-#if !defined (__PPC__) && !defined (__x86_64__) && !defined (__i386__) && !defined (__sparc_v9__)
+#ifdef ARM11_CYCLE_COUNTER
+static inline cycles_t get_cycles (void)
+{
+	unsigned cc;
+	static int init = 0;
+	if(!init) {
+		__asm__ volatile ("mcr p15, 0,   %0,  c15,  c12, 0" :: "r"(1)); // start
+		 init = 1;
+	}
+	__asm__ __volatile__ ("mrc p15, 0, %0, c15, c12, 1" : "=r" (cc));
 
-#warning No suitable get_cycles() implementation. Returning 0 instead
+	return cc;
+}
+#elif defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7__)
+static inline cycles_t get_cycles(void)
+{
+     unsigned cc;
+     static int init = 0;
+     if(!init) {
+         __asm__ __volatile__ ("mcr p15, 0, %0, c9, c12, 2" :: "r"(1<<31)); /* stop the cc */
+         __asm__ __volatile__ ("mcr p15, 0, %0, c9, c12, 0" :: "r"(5));     /* initialize */
+         __asm__ __volatile__ ("mcr p15, 0, %0, c9, c12, 1" :: "r"(1<<31)); /* start the cc */
+         init = 1;
+     }
+     __asm__ __volatile__ ("mrc p15, 0, %0, c9, c13, 0" : "=r"(cc));
+     return cc;
+} 	
+#endif /* arm stuff */
+
+/* everything else but x86, amd64, sparcv9 or ppc */
+#if !defined (__PPC__) && !defined (__x86_64__) && !defined (__i386__) && !defined (__sparc_v9__) && !defined(ARM11_CYCLE_COUNTER) && !(defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7__))
+
+#error No suitable get_cycles() implementation. Returning 0 instead
 
 typedef unsigned long long cycles_t;
 
