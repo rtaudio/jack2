@@ -129,6 +129,8 @@ def build(bld):
         prog.includes = os_incdir + ['../common/jack', '../common']
         prog.source = ['alsa_in.c', '../common/memops.c']
         prog.env.append_value("CFLAGS", "-DNO_JACK_ERROR")
+# RPI fix
+        prog.env.append_unique("LINKFLAGS", "-lasound")
         prog.use = ['clientlib', 'ALSA', 'SAMPLERATE', 'M']
         prog.target = 'alsa_in'
 
@@ -136,8 +138,11 @@ def build(bld):
         prog.includes = os_incdir + ['../common/jack', '../common']
         prog.source = ['alsa_out.c', '../common/memops.c']
         prog.env.append_value("CFLAGS", "-DNO_JACK_ERROR")
+# RPI fix
+        prog.env.append_unique("LINKFLAGS", "-lasound")
         prog.use = ['clientlib', 'ALSA', 'SAMPLERATE', 'M']
         prog.target = 'alsa_out'
+        
 
     for example_lib, example_lib_source in list(example_libs.items()):
         lib = bld(features = 'c cshlib')

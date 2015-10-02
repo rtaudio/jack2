@@ -411,7 +411,8 @@ def options(opt):
     doxygen = add_auto_option(opt, 'doxygen', help='Build doxygen documentation', conf_dest='BUILD_DOXYGEN_DOCS')
     doxygen.add_program('doxygen')
     alsa = add_auto_option(opt, 'alsa', help='Enable ALSA driver', conf_dest='BUILD_DRIVER_ALSA')
-    alsa.add_package('alsa', atleast_version='1.0.18')
+    # RPI mod
+    #alsa.add_package('alsa', atleast_version='1.0.18')
     firewire = add_auto_option(opt, 'firewire', help='Enable FireWire driver (FFADO)', conf_dest='BUILD_DRIVER_FFADO')
     firewire.add_package('libffado', atleast_version='1.999.17')
     freebob = add_auto_option(opt, 'freebob', help='Enable FreeBob driver')
@@ -531,6 +532,8 @@ def configure(conf):
         conf.env.append_unique('CXXFLAGS', '-g')
         conf.env.append_unique('CFLAGS', '-g')
         conf.env.append_unique('LINKFLAGS', '-g')
+    # RPI alsa fix
+    conf.env.append_unique("LINKFLAGS", "-lasound")
 
     if not Options.options.autostart in ["default", "classic", "dbus", "none"]:
         conf.fatal("Invalid autostart value \"" + Options.options.autostart + "\"")

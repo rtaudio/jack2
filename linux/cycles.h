@@ -112,6 +112,8 @@ static inline cycles_t get_cycles (void)
 #endif /* __i386__ */
 
 #ifdef ARM11_CYCLE_COUNTER
+typedef  unsigned int cycles_t; // RPI mod
+
 static inline cycles_t get_cycles (void)
 {
 	unsigned cc;
@@ -125,6 +127,8 @@ static inline cycles_t get_cycles (void)
 	return cc;
 }
 #elif defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7__)
+
+typedef  unsigned int cycles_t; // RPI mod
 static inline cycles_t get_cycles(void)
 {
      unsigned cc;

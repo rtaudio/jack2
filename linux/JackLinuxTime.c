@@ -290,7 +290,7 @@ SERVER_EXPORT void JackSleep(long usec)
 
 SERVER_EXPORT void InitTime()
 {
-	__jack_cpu_mhz = jack_get_mhz ();
+	// __jack_cpu_mhz = jack_get_mhz (); //RPI mod
 }
 
 SERVER_EXPORT void EndTime()
@@ -303,6 +303,7 @@ void SetClockSource(jack_timer_type_t source)
 	switch (source)
 	{
         case JACK_TIMER_CYCLE_COUNTER:
+			__jack_cpu_mhz = jack_get_mhz (); //RPI mod
             _jack_get_microseconds = jack_get_microseconds_from_cycles;
             break;
 
