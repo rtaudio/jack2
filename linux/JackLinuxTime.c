@@ -128,11 +128,7 @@ static jack_time_t jack_get_microseconds_from_cycles (void) {
 	return get_cycles() / __jack_cpu_mhz;
 }
 
-/*
- * This is another kludge.  It looks CPU-dependent, but actually it
- * reflects the lack of standards for the Linux kernel formatting of
- * /proc/cpuinfo.
- */
+
  
 static jack_time_t jack_read_file_u64(const char *filename)
 {
@@ -158,6 +154,11 @@ static jack_time_t jack_read_file_u64(const char *filename)
 	return 0;
 }
 
+/*
+ * This is another kludge.  It looks CPU-dependent, but actually it
+ * reflects the lack of standards for the Linux kernel formatting of
+ * /proc/cpuinfo.
+ */
 static jack_time_t jack_get_mhz (void)
 {
 /*
@@ -290,7 +291,7 @@ SERVER_EXPORT void JackSleep(long usec)
 
 SERVER_EXPORT void InitTime()
 {
-	// __jack_cpu_mhz = jack_get_mhz (); //RPI mod
+	// initialization done in SetClockSource if necessary
 }
 
 SERVER_EXPORT void EndTime()
@@ -303,7 +304,8 @@ void SetClockSource(jack_timer_type_t source)
 	switch (source)
 	{
         case JACK_TIMER_CYCLE_COUNTER:
-			__jack_cpu_mhz = jack_get_mhz (); //RPI mod
+			jack_log("Clock source : %s", "(arm) cycle counter");
+			__jack_cpu_mhz = jack_get_mhz ();
             _jack_get_microseconds = jack_get_microseconds_from_cycles;
             break;
 
