@@ -38,6 +38,10 @@ void JackEngineControl::CalcCPULoad(JackClientInterface** table,
                                     jack_time_t cur_cycle_begin,
                                     jack_time_t prev_cycle_end)
 {
+#if 1
+    // disable CPU load calculation because it adds extra load
+    fCPULoad = 0.0f;
+#else
     fPrevCycleTime = fCurCycleTime;
     fCurCycleTime = cur_cycle_begin;
     jack_time_t last_cycle_end = prev_cycle_end;
@@ -86,6 +90,7 @@ void JackEngineControl::CalcCPULoad(JackClientInterface** table,
     }
 
     fRollingClientUsecsCnt++;
+#endif
 }
 
 void JackEngineControl::ResetRollingUsecs()
