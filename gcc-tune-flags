@@ -1,9 +1,8 @@
-# This prints special ARM optimization arguments for GCC
-# cares about soft/hard floats and NEON/VFP flags
-# see https://community.arm.com/groups/tools/blog/2013/04/15/arm-cortex-a-processors-and-gcc-command-lines
-# Useful tools:
-# cat /proc/cpuinfo | grep Features
-# gcc -c -Q -O3 -... --help=optimizers
+# This prints special ARM optimization arguments for GCC cares about 
+# soft/hard floats and NEON/VFP flags see 
+# https://community.arm.com/groups/tools/blog/2013/04/15/arm-cortex-a-processors-and-gcc-command-lines 
+# Useful tools: cat /proc/cpuinfo | grep Features gcc -c -Q -O3 -... 
+# --help=optimizers
 #
 # GCC flags:
 # debug vectorizer: -fdump-tree-vect -ftree-vectorizer-verbose=<level 1..9>
@@ -24,7 +23,7 @@ CPU_HARDWARE="`cat /proc/cpuinfo | grep Hardware | cut -d":" -f2 | xargs`"
 
 if [[ "BCM2709" == "$CPU_HARDWARE" ]]; then
 	>&2 echo "Raspberrry PI 2 detected (Cortex A7)"
-	FLAGS="$FLAGS -march=armv7-a -mcpu=cortex-a7 -mtune=cortex-a7 -mfpu=neon-vfpv4"
+	FLAGS="$FLAGS -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4"
 elif [[ "Generic AM33XX (Flattened Device Tree)" == "$CPU_HARDWARE" ]]; then
 	>&2 echo "beaglebone black detected (Cortex A8)"
 	FLAGS="$FLAGS -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon"
