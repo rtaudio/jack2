@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //#define JACK_SCHED_POLICY SCHED_RR
 #define JACK_SCHED_POLICY SCHED_FIFO
 
+#define SchedPolicy2Str(s) (s == SCHED_FIFO ? "FIFO" : "RR")
+
 namespace Jack
 {
 
@@ -120,7 +122,7 @@ int JackPosixThread::StartImp(jack_native_thread_t* thread, int priority, int re
         }
 
         if ((res = pthread_attr_setschedpolicy(&attributes, JACK_SCHED_POLICY))) {
-            jack_error("Cannot set RR scheduling class for RT thread res = %d", res);
+            jack_error("Cannot set %s scheduling class for RT thread res = %d", SchedPolicy2Str(JACK_SCHED_POLICY), res);
             return -1;
         }
 
@@ -235,8 +237,8 @@ int JackPosixThread::AcquireRealTimeImp(jack_native_thread_t thread, int priorit
     jack_log("JackPosixThread::AcquireRealTimeImp priority = %d", priority);
 
     if ((res = pthread_setschedparam(thread, JACK_SCHED_POLICY, &rtparam)) != 0) {
-        jack_error("Cannot use real-time scheduling (RR/%d)"
-                   "(%d: %s)", rtparam.sched_priority, res,
+        jack_error("Cannot use real-time scheduling (%s/%d)"
+                   "(%d: %s)", SchedPolicy2Str(JACK_SCHED_POLICY), rtparam.sched_priority, res,
                    strerror(res));
         return -1;
     }

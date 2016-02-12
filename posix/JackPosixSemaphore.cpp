@@ -32,11 +32,15 @@ void JackPosixSemaphore::BuildName(const char* client_name, const char* server_n
 {
     char ext_client_name[SYNC_MAX_NAME_SIZE + 1];
     JackTools::RewriteName(client_name, ext_client_name);
+#if __APPLE__  // POSIX semaphore names are limited to 32 characters... 
+    snprintf(res, 32, "js_%s", ext_client_name); 
+#else
     if (getenv("JACK_PROMISCUOUS_SERVER")) {
         snprintf(res, size, "jack_sem.%s_%s", server_name, ext_client_name);
     } else {
         snprintf(res, size, "jack_sem.%d_%s_%s", JackTools::GetUID(), server_name, ext_client_name);
     }
+#endif
 }
 
 bool JackPosixSemaphore::Signal()
@@ -181,6 +185,7 @@ bool JackPosixSemaphore::ConnectInput(const char* name, const char* server_name)
         return true;
     } else {
         jack_error("Connect: fSemaphore not initialized!");
+        return false;
     }
 }
 
