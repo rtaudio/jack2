@@ -469,6 +469,7 @@ namespace Jack
                             display_error_msg ( count, "w3" );
                             int err = snd_pcm_prepare ( fOutputDevice );
                             check_error_msg ( err, "preparing output stream" );
+							check_error_msg ( -10000, "JackAlsaAdapter: recovery" );
                             goto recovery;
                         }
                         break;
@@ -503,6 +504,7 @@ namespace Jack
                             display_error_msg ( count, "w3" );
                             int err = snd_pcm_prepare ( fOutputDevice );
                             check_error_msg ( err, "preparing output stream" );
+							check_error_msg ( -10000, "JackAlsaAdapter: recovery" );
                             goto recovery;
                         }
                         break;

@@ -1173,6 +1173,8 @@ alsa_driver_xrun_recovery (alsa_driver_t *driver, float *delayed_usecs)
 {
 	snd_pcm_status_t *status;
 	int res;
+	
+	jack_error("alsa_driver_xrun_recovery");
 
 	snd_pcm_status_alloca(&status);
 
@@ -1329,7 +1331,7 @@ alsa_driver_wait (alsa_driver_t *driver, int extra_fd, int *status, float
 #ifdef __ANDROID__
 		poll_result = poll (driver->pfd, nfds, -1);  //fix for sleep issue
 #else
-		poll_result = poll (driver->pfd, nfds, driver->poll_timeout);
+		poll_result = poll (driver->pfd, nfds, -1); // rtaudio driver->poll_timeout
 #endif
 		if (poll_result < 0) {
 

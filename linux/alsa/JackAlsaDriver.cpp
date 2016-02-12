@@ -419,7 +419,7 @@ retry:
          * clients about the delay.
          */
         jack_log("ALSA XRun wait_status = %d", wait_status);
-        NotifyXRun(fBeginDateUst, fDelayedUsecs);
+        //NotifyXRun(fBeginDateUst, fDelayedUsecs); //rtaudio opt
         goto retry; /* recoverable error*/
     }
 
