@@ -1,0 +1,104 @@
+# Maintainer: rtfreedman  (rob<d0t>til<d0t>freedman<aT>googlemail<d0t>com
+# Contributor: Loren Copeland <thisisquitealongname at gm--l> 
+# based on jack2 PKGBUILD by Ray Rashif <schiv@archlinux.org>
+
+pkgbase=jack2-git
+pkgname=('jack2-git')
+#pkgname= # single build (overrides split)
+pkgver=3436
+pkgrel=1
+arch=('i686' 'x86_64' 'armv7h')
+url="http://jackaudio.org/"
+backup=(etc/security/limits.d/99-audio.conf)
+license=('GPL')
+makedepends=('python3' 'libsamplerate' 'git')
+source=("git+https://github.com/rtaudio/jack2"
+        '99-audio.conf'
+        '40-hpet-permissions.rules')
+md5sums=('SKIP'
+         'ae65b7c9ebe0fff6c918ba9d97ae342d'
+         '471aad533ff56c5d3cbbf65ce32cadef')
+
+_gitname='jack2'
+
+_pyfix() {
+  sed -i 's:bin/env python:bin/env python:' \
+    "$pkgdir/usr/bin/jack_control"
+}
+
+_wafconf() {
+  # default=64,  kxstudio=256  --clients= 
+  # default=768, kxstudio=2048 --ports-per-application= 
+
+  python waf configure --prefix=/usr \
+    --clients=16 --ports-per-application=32 \
+    --alsa  --portaudio=no --prefix=/usr $@
+
+  # not building with doxygen
+  # see https://github.com/jackaudio/jack2/issues/22
+}
+
+_isbuild() {
+  printf "%s\n" ${pkgname[@]} | grep -qx $1
+}
+
+pkgver() {
+  cd jack2
+  # get a plain number
+  echo $(git rev-list --count master) 
+}
+
+prepare() {
+  # we may do 2 different builds
+  true
+}
+
+build() {
+  cd "$srcdir"
+
+  # Some optimisation bug exists for current GCC
+  # see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53663 ##fixed
+  #export CFLAGS="${CFLAGS/-O[0-9]/-O0}"
+  #export CFLAGS
+  #export CXXFLAGS="$CFLAGS"
+
+  # fix doxygen building
+  # TODO: report upstream, but redundant until gihub issue 22 resolves
+  #sed -i 's:build/default/html:html:' $_tarname-$pkgver/wscript
+
+  # mixed dbus/classic build
+  if _isbuild jack2-git; then
+    cd $_gitname
+    msg2 "Running Mixed D-Bus/Classic build"
+    _wafconf
+    python waf build $MAKEFLAGS
+    cd ..
+  fi
+}
+
+package_jack2-git() {
+  ! _isbuild jack2-git && return 0
+
+  pkgdesc="The next-generation JACK with SMP support"
+  depends=('libsamplerate' 'opus' 'celt')
+  optdepends=('python: jack_control')
+  conflicts=('jack')
+  provides=('jack' 'jackmp' 'jackdmp')
+
+  cd "$srcdir/$_gitname"
+
+  python waf install --destdir="$pkgdir"
+
+  # fix for major python transition
+  _pyfix
+
+  # configure realtime access/scheduling
+  # see https://bugs.archlinux.org/task/26343
+  install -Dm644 "$srcdir/99-audio.conf" \
+    "$pkgdir/etc/security/limits.d/99-audio.conf"
+
+  install -Dm644 "$srcdir/40-hpet-permissions.rules" \
+    "$pkgdir/usr/lib/udev/rules.d/40-hpet-permissions.rules"
+}
+
+# vim:set ts=2 sw=2 et:
