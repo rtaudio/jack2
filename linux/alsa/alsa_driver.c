@@ -50,12 +50,12 @@ extern void store_wait_time (int);
 extern void show_wait_times ();
 extern void show_work_times ();
 
-#undef DEBUG_WAKEUP
+//#undef DEBUG_WAKEUP
 
 char* strcasestr(const char* haystack, const char* needle);
 
 /* Delay (in process calls) before jackd will report an xrun */
-#define XRUN_REPORT_DELAY 0
+#define XRUN_REPORT_DELAY 100
 
 void
 jack_driver_init (jack_driver_t *driver)
@@ -1216,8 +1216,7 @@ alsa_driver_xrun_recovery (alsa_driver_t *driver, float *delayed_usecs)
 		*delayed_usecs = diff.tv_sec * 1000000.0 + diff.tv_usec;
 		jack_log("**** alsa_pcm: xrun of at least %.3f msecs",*delayed_usecs / 1000.0);
 	}
-
-	if (alsa_driver_restart (driver)) {
+	else if (alsa_driver_restart (driver)) {
 		return -1;
 	}
 	return 0;

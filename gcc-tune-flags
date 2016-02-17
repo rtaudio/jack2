@@ -12,7 +12,7 @@
 # -Ofast (includes -O3 ans -ffast-math)
 
 
-FLAGS="-Ofast -O3 -ffast-math -funsafe-math-optimizations"
+FLAGS="-Ofast -O3 -ffast-math -funsafe-math-optimizations -fdump-tree-vect -ftree-vectorizer-verbose=2"
 
 # softfp/hard (never soft!)
 if ! [[ -z `gcc -v 2>&1 | grep hard` ]]; then FLAGS="$FLAGS -mfloat-abi=hard"; 
@@ -33,7 +33,7 @@ else
 fi
 
 # uncomment this if you want to profile:
-FLAGS="$FLAGS -fno-omit-frame-pointer"
+#FLAGS="$FLAGS -fno-omit-frame-pointer"
 
 >&2 echo "$FLAGS"
 echo "$FLAGS"

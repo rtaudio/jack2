@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "JackTime.h"
 #include "JackTypes.h"
 #include "JackError.h"
+#include "cycles.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -55,13 +56,52 @@ typedef uint32_t hpet_counter_t;
 static int hpet_fd;
 static unsigned char *hpet_ptr;
 static uint32_t hpet_period; /* period length in femto secs */
-static uint64_t hpet_offset = 0;
-static uint64_t hpet_wrap;
-static hpet_counter_t hpet_previous = 0;
-#endif /* defined(__gnu_linux__) && (__i386__ || __x86_64__) */
+	static uint64_t hpet_offset = 0;
+	static uint64_t hpet_wrap;
+	static hpet_counter_t hpet_previous = 0;
+#elif defined(__arm__) && defined(ARM_RPI2_HPET) /* defined(__gnu_linux__) && (__i386__ || __x86_64__) */
+	#define HPET_SUPPORT
+	#define BCM2709_PERI_BASE        0x3F000000 // rpi2
+	#define ARM_PERI_BASE BCM2709_PERI_BASE
+	#define ARM_HPET_ST_BASE                  (ARM_PERI_BASE + 0x3000)
+	#define ARM_HPET_TIMER_OFFSET (4)
+	#define ARM_HPET_TIMER_RATE 1000000
+	#warning "Note: choosing RPI2 hpet timer offset (BCM2709)"
+#endif
 
-#ifdef HPET_SUPPORT
 
+
+#if defined(__arm__) && defined(HPET_SUPPORT)
+static long long int *arm_hpet_ptr;
+
+static int jack_hpet_init ()
+{
+	jack_log("Init ARM HPET at %#010x", ARM_HPET_ST_BASE);
+	 
+	int fd;
+	void *st_base;
+	
+    if (-1 == (fd = open("/dev/mem", O_RDONLY))) {
+        printf ("Cannot access /dev/mem (%s)\n", strerror (errno));
+        return -1;
+    }
+	
+    if (MAP_FAILED == (st_base = mmap(NULL, 4096,
+                        PROT_READ, MAP_SHARED, fd, ARM_HPET_ST_BASE))) {
+        printf ("mmap() failed.\n");
+        return -1;
+    }
+	
+	arm_hpet_ptr = (long long int *)((char *)st_base + ARM_HPET_TIMER_OFFSET);
+	
+	return 0;
+}
+
+jack_time_t jack_get_microseconds_from_hpet (void)
+{
+	return *arm_hpet_ptr; // 1mhz counter => 1µs cycle
+}
+#elif defined(HPET_SUPPORT)
 static int jack_hpet_init ()
 {
 	uint32_t hpet_caps;
@@ -309,22 +349,11 @@ void SetClockSource(jack_timer_type_t source)
             break;
 
         case JACK_TIMER_HPET:
-#ifdef ARM_HPET 
-			jack_log("Clock source : %s", "arm hpet");
-	
-			if(jack_arm_hpet_init() == 0) {
-				_jack_get_microseconds = jack_get_microseconds_from_arm_hpet;
-			} else {
-				jack_log("Failed not init arm hpet, falling back to system clock.");
-				_jack_get_microseconds = jack_get_microseconds_from_system;
-			}
-#else
             if (jack_hpet_init () == 0) {
                 _jack_get_microseconds = jack_get_microseconds_from_hpet;
             } else {
                 _jack_get_microseconds = jack_get_microseconds_from_system;
             }
-#endif
             break;
 
         case JACK_TIMER_SYSTEM_CLOCK:

@@ -2,7 +2,7 @@
 set -e
 
 FLAGS="`./gcc-tune-flags`"
-
+FLAGS=""
 FLAGS="$FLAGS -DDEBUG_WAKEUP"
 
 
@@ -10,7 +10,7 @@ CFLAGS=$FLAGS CXXFLAGS=$FLAGS LINKFLAGS=$LDFLAGS ./waf configure --alsa --portau
 
 sleep 2
 
-killall jackd
+pidof jackd && killall jackd
 
 ./waf build -j6
 
