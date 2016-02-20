@@ -148,7 +148,7 @@ static inline cycles_t get_cycles(void)
 #endif /* arm stuff */
 
 /* everything else but x86, amd64, sparcv9 or ppc */
-#if !defined (__PPC__) && !defined (__x86_64__) && !defined (__i386__) && !defined (__sparc_v9__) && !defined(ARM11_CYCLE_COUNTER) && !(defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7__))
+#if !defined (__PPC__) && !defined (__x86_64__) && !defined (__i386__) && !defined (__sparc_v9__) && !defined(__ARM_ARCH_6J__) && !(defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7__))
 
 #error No suitable get_cycles() implementation. Returning 0 instead
 
