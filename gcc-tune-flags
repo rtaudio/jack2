@@ -10,9 +10,9 @@
 # -mthumb (thumb TODO)
 # -fno-schedule-insns (no automatic re-scheduling of instructions)
 # -Ofast (includes -O3 ans -ffast-math)
+# -fdump-tree-vect
 
-
-FLAGS="-Ofast -O3 -ffast-math -funsafe-math-optimizations -fdump-tree-vect -ftree-vectorizer-verbose=2"
+FLAGS="-Ofast -O3 -ffast-math -funsafe-math-optimizations -ftree-vectorize  -ftree-vectorizer-verbose=2"
 
 # softfp/hard (never soft!)
 if ! [[ -z `gcc -v 2>&1 | grep hard` ]]; then FLAGS="$FLAGS -mfloat-abi=hard"; 
