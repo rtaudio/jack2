@@ -7,3 +7,5 @@ android/.server/
 android/.client/
 codeBlocks
 *.so
+scripts/sndrpiwsp/*.wav
+
