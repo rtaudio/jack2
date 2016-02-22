@@ -40,7 +40,7 @@ class JackAlsaDriver : public JackAudioDriver
 
         jack_driver_t* fDriver;
 
-        void UpdateLatencies();
+        
 
     public:
 
@@ -78,6 +78,8 @@ class JackAlsaDriver : public JackAudioDriver
 
         int Read();
         int Write();
+		
+		void UpdateLatencies();
 
         // BufferSize can be changed
         bool IsFixedBufferSize()

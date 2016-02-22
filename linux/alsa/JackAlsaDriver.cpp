@@ -929,6 +929,11 @@ int Restart()
     return res;
 }
 
+void UpdateLatencies()
+{
+	g_alsa_driver->UpdateLatencies();
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -11,7 +11,7 @@ arch=('i686' 'x86_64' 'armv7h')
 url="http://jackaudio.org/"
 backup=(etc/security/limits.d/99-audio.conf)
 license=('GPL')
-makedepends=('python3' 'libsamplerate' 'git')
+makedepends=('python3' 'libsamplerate' 'git' 'fakeroot')
 source=("git+https://github.com/rtaudio/jack2"
         '99-audio.conf'
         '40-hpet-permissions.rules')
