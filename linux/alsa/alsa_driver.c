@@ -1259,7 +1259,7 @@ static snd_pcm_sframes_t get_queued_playback_samples(alsa_driver_t *driver)
 {
 	snd_pcm_sframes_t delay;
 	int err;
-
+return 0; // TODO
 	if ((err = snd_pcm_delay(driver->playback_handle, &delay)) < 0)
 		return 0;
 	return delay;
@@ -1269,7 +1269,7 @@ static snd_pcm_sframes_t get_queued_capture_samples(alsa_driver_t *driver)
 {
 	snd_pcm_sframes_t delay;
 	int err;
-
+return 0; // TODO
 	if ((err = snd_pcm_delay(driver->capture_handle, &delay)) < 0)
 		return 0;
 	return delay;

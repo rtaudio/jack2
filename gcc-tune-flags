@@ -12,7 +12,7 @@
 # -Ofast (includes -O3 ans -ffast-math)
 # -fdump-tree-vect
 
-FLAGS="-Ofast -O3 -ffast-math -funsafe-math-optimizations -ftree-vectorize  -ftree-vectorizer-verbose=2"
+FLAGS="-O3 -Ofast -ffast-math -funsafe-math-optimizations -ftree-vectorizer-verbose=2"
 
 # softfp/hard (never soft!)
 if ! [[ -z `gcc -v 2>&1 | grep hard` ]]; then FLAGS="$FLAGS -mfloat-abi=hard"; 
