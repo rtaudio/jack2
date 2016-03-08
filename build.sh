@@ -1,15 +1,19 @@
 #!/bin/bash
 set -e
 
+FLAGS="`./gcc-tune-flags`"
 #FLAGS="`./gcc-tune-flags`"
 FLAGS="-Ofast"
 #FLAGS="$FLAGS -DDEBUG_WAKEUP"
+
+FLAGS="$FLAGS -DDEBUG_WAKEUP"
 
 
 CFLAGS=$FLAGS CXXFLAGS=$FLAGS LINKFLAGS=$LDFLAGS ./waf configure --alsa --portaudio=no --prefix=/usr
 
 sleep 2
 
+killall jackd
 pidof jackd && killall jackd
 
 ./waf build -j6
