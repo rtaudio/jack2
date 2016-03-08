@@ -50,12 +50,12 @@ extern void store_wait_time (int);
 extern void show_wait_times ();
 extern void show_work_times ();
 
-#undef DEBUG_WAKEUP
+//#undef DEBUG_WAKEUP
 
 char* strcasestr(const char* haystack, const char* needle);
 
 /* Delay (in process calls) before jackd will report an xrun */
-#define XRUN_REPORT_DELAY 0
+#define XRUN_REPORT_DELAY 100
 
 void
 jack_driver_init (jack_driver_t *driver)
@@ -1159,7 +1159,10 @@ alsa_driver_restart (alsa_driver_t *driver)
  	if ((res = driver->nt_stop((struct _jack_driver_nt *) driver))==0)
 		res = driver->nt_start((struct _jack_driver_nt *) driver);
     */
-    res = Restart();
+	
+	// rtaudio: instead of restart, reset! (like a buffer size change but not changing buffer size)
+	alsa_driver_reset_parameters(driver, driver->frames_per_cycle, driver->user_nperiods, driver->frame_rate);
+    //res = Restart();
 	driver->xrun_recovery = 0;
 
 	if (res && driver->midi)
@@ -1251,6 +1254,26 @@ alsa_driver_set_clock_sync_status (alsa_driver_t *driver, channel_t chn,
 }
 
 static int under_gdb = FALSE;
+
+static snd_pcm_sframes_t get_queued_playback_samples(alsa_driver_t *driver)
+{
+	snd_pcm_sframes_t delay;
+	int err;
+
+	if ((err = snd_pcm_delay(driver->playback_handle, &delay)) < 0)
+		return 0;
+	return delay;
+}
+
+static snd_pcm_sframes_t get_queued_capture_samples(alsa_driver_t *driver)
+{
+	snd_pcm_sframes_t delay;
+	int err;
+
+	if ((err = snd_pcm_delay(driver->capture_handle, &delay)) < 0)
+		return 0;
+	return delay;
+}
 
 jack_nframes_t
 alsa_driver_wait (alsa_driver_t *driver, int extra_fd, int *status, float
@@ -1489,6 +1512,24 @@ alsa_driver_wait (alsa_driver_t *driver, int extra_fd, int *status, float
 	driver->last_wait_ust = poll_ret;
 
 	avail = capture_avail < playback_avail ? capture_avail : playback_avail;
+	
+	
+	snd_pcm_sframes_t playbackDelay = get_queued_playback_samples(driver);
+	snd_pcm_sframes_t captureDelay = get_queued_capture_samples(driver);
+	
+	if(driver->capture_frame_latency != captureDelay  || driver->playback_frame_latency != playbackDelay)
+	{
+		
+		jack_log("ALSA hardware delays changed, capture (%d -> %d), playback (%d -> %d)",
+			(int)driver->capture_frame_latency, (int)captureDelay,
+			(int)driver->playback_frame_latency, (int)playbackDelay
+		);		
+		
+		driver->capture_frame_latency = captureDelay;
+		driver->playback_frame_latency = playbackDelay;
+		
+		UpdateLatencies();
+	}
 
 #ifdef DEBUG_WAKEUP
 	fprintf (stderr, "wakeup complete, avail = %lu, pavail = %lu "
