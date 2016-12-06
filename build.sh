@@ -21,6 +21,9 @@ pidof jackd && killall jackd
 echo "JACK2 built. Now run:"
 echo "./waf install"
 
+echo ""
+echo "Make sure to remove the following packages: gjacktransport qjackctl qjackrcd libjack-dev libjack-jackd2-0 libjack0 libjack-jackd2-dev"
+
 
 # jack default cmd line: 
 #
